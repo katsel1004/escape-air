@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>탈출 속도와 행성 대기 시뮬레이터</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: #0B0F19;
+            color: #E2E8F0;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1E293B;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748B;
+        }
+
+        /* Glassmorphism effects */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Custom slider style */
+        input[type=range] {
+            accent-color: #3B82F6;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-10 flex flex-col justify-between selection:bg-blue-500 selection:text-white">
+
+    <!-- Header Navbar -->
+    <header class="glass-panel sticky top-0 z-50 border-b border-slate-800 px-4 py-3 md:px-8">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-blue-600/20 text-blue-400 rounded-lg border border-blue-500/30">
+                    <i data-lucide="orbit" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg md:text-xl text-white tracking-wide">탈출 속도와 행성 대기 시뮬레이터</h1>
+                    <p class="text-xs text-slate-400">고등학교 2학년 역학과 에너지</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2 w-full md:w-auto justify-end">
+                <button id="btn-teacher-menu" class="px-4 py-2.5 bg-slate-800 hover:bg-purple-600/30 border border-purple-500/40 text-purple-300 hover:text-purple-200 font-medium text-xs md:text-sm rounded-xl transition duration-200 flex items-center justify-center space-x-2 shadow-lg active:scale-95">
+                    <i data-lucide="graduation-cap" class="w-4 h-4 text-purple-400"></i>
+                    <span>👩‍🏫 교사용 메뉴</span>
+                </button>
+
+                <button id="btn-random-planet" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium text-xs md:text-sm rounded-xl shadow-lg shadow-blue-500/20 transition duration-200 flex items-center justify-center space-x-2 border border-blue-400/30 active:scale-95">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    <span>🎲 새로운 가상 행성 탐사</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Container -->
+    <main class="max-w-7xl mx-auto w-full px-4 md:px-8 mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- LEFT PANEL: Planet Specs & Sliders (4 cols) -->
+        <section class="lg:col-span-4 flex flex-col gap-6">
+            <!-- Planet Presets Quick Selector -->
+            <div class="glass-panel rounded-2xl p-4 shadow-xl">
+                <div class="text-xs font-semibold text-slate-300 mb-2.5 flex items-center gap-1.5">
+                    <i data-lucide="globe" class="w-3.5 h-3.5 text-blue-400"></i> 태양계 천체 프리셋 선택
+                </div>
+                <div class="grid grid-cols-3 gap-1.5" id="preset-buttons">
+                    <button data-preset="earth" class="btn-preset px-2.5 py-1.5 bg-slate-800 hover:bg-blue-600/40 border border-slate-700 hover:border-blue-500/50 rounded-lg text-xs font-medium text-slate-200 transition">🌍 지구</button>
+                    <button data-preset="moon" class="btn-preset px-2.5 py-1.5 bg-slate-800 hover:bg-blue-600/40 border border-slate-700 hover:border-blue-500/50 rounded-lg text-xs font-medium text-slate-200 transition">🌙 달</button>
+                    <button data-preset="mars" class="btn-preset px-2.5 py-1.5 bg-slate-800 hover:bg-blue-600/40 border border-slate-700 hover:border-blue-500/50 rounded-lg text-xs font-medium text-slate-200 transition">🔴 화성</button>
+                    <button data-preset="mercury" class="btn-preset px-2.5 py-1.5 bg-slate-800 hover:bg-blue-600/40 border border-slate-700 hover:border-blue-500/50 rounded-lg text-xs font-medium text-slate-200 transition">⚪ 수성</button>
+                    <button data-preset="jupiter" class="btn-preset px-2.5 py-1.5 bg-slate-800 hover:bg-blue-600/40 border border-slate-700 hover:border-blue-500/50 rounded-lg text-xs font-medium text-slate-200 transition">🟠 목성</button>
+                    <button data-preset="saturn" class="btn-preset px-2.5 py-1.5 bg-slate-800 hover:bg-blue-600/40 border border-slate-700 hover:border-blue-500/50 rounded-lg text-xs font-medium text-slate-200 transition">🪐 토성</button>
+                </div>
+            </div>
+
+            <!-- Planet Card -->
+            <div class="glass-panel rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-4 border-b border-slate-700/60 pb-3">
+                        <div class="flex items-center space-x-2">
+                            <span id="planet-icon-badge" class="w-3 h-3 rounded-full bg-blue-400 animate-pulse"></span>
+                            <h2 id="planet-name" class="text-xl font-bold text-white tracking-wide">Kepler-84b</h2>
+                        </div>
+                        <span id="planet-type" class="text-xs px-2.5 py-1 bg-blue-950/70 text-blue-300 rounded-full font-mono border border-blue-700/50">암석형 행성</span>
+                    </div>
+
+                    <!-- Parameter Sliders & Manual Inputs -->
+                    <div class="space-y-4">
+                        <!-- Mass Slider -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-400 flex items-center gap-1"><i data-lucide="weight" class="w-3.5 h-3.5"></i> 행성 질량 (M)</span>
+                                <span class="font-mono text-blue-400 font-semibold" id="val-mass">1.00 M⊕</span>
+                            </div>
+                            <input type="range" id="input-mass" min="0.01" max="350.0" step="0.01" value="1.0" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                            <div class="flex justify-between text-[10px] text-slate-500 mt-0.5">
+                                <span>0.01 M⊕ (달/소행성)</span>
+                                <span>350 M⊕ (목성급)</span>
+                            </div>
+                        </div>
+
+                        <!-- Radius Slider -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-400 flex items-center gap-1"><i data-lucide="disc" class="w-3.5 h-3.5"></i> 행성 반지름 (R)</span>
+                                <span class="font-mono text-cyan-400 font-semibold" id="val-radius">1.00 R⊕</span>
+                            </div>
+                            <input type="range" id="input-radius" min="0.1" max="12.0" step="0.01" value="1.0" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                            <div class="flex justify-between text-[10px] text-slate-500 mt-0.5">
+                                <span>0.1 R⊕ (소형)</span>
+                                <span>12.0 R⊕ (거대 가스형)</span>
+                            </div>
+                        </div>
+
+                        <!-- Temperature Slider -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-400 flex items-center gap-1"><i data-lucide="thermometer" class="w-3.5 h-3.5"></i> 표면 기온 (T)</span>
+                                <span class="font-mono text-amber-400 font-semibold" id="val-temp">15 °C</span>
+                            </div>
+                            <input type="range" id="input-temp" min="-200" max="500" step="5" value="15" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                            <div class="flex justify-between text-[10px] text-slate-500 mt-0.5">
+                                <span>-200 °C (외곽/극지)</span>
+                                <span>500 °C (항성 근접)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calculated Output Metrics -->
+                <div class="grid grid-cols-2 gap-3 mt-6 pt-4 border-t border-slate-700/60">
+                    <div class="glass-card p-3 rounded-xl border border-slate-700/50">
+                        <div class="text-[11px] text-slate-400 mb-1 flex items-center gap-1">
+                            <i data-lucide="arrow-down" class="w-3 h-3 text-emerald-400"></i> 표면 중력 (g)
+                        </div>
+                        <div class="text-base font-bold font-mono text-slate-100" id="calc-gravity">9.80 m/s²</div>
+                        <div class="text-[10px] text-slate-500" id="calc-gravity-rel">(지구의 1.00배)</div>
+                    </div>
+
+                    <div class="glass-card p-3 rounded-xl border border-blue-500/20 bg-blue-950/20">
+                        <div class="text-[11px] text-blue-300 mb-1 flex items-center gap-1">
+                            <i data-lucide="rocket" class="w-3 h-3 text-blue-400"></i> 탈출 속도 (v_e)
+                        </div>
+                        <div class="text-lg font-extrabold font-mono text-blue-400" id="calc-v-escape">11.20 km/s</div>
+                        <div class="text-[10px] text-slate-400">행성을 벗어나는 기준</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Concept Tip Box -->
+            <div class="glass-panel p-4 rounded-2xl text-xs text-slate-300 space-y-2.5 border-l-4 border-l-blue-500">
+                <div class="font-semibold text-blue-400 flex items-center gap-1.5 text-sm">
+                    <i data-lucide="lightbulb" class="w-4 h-4"></i> 물리 탐구 핵심 포인트 & 주요 수식
+                </div>
+                
+                <!-- Formulas Display -->
+                <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 space-y-1.5 font-mono text-[11px]">
+                    <div class="text-cyan-300 flex justify-between items-center">
+                        <span>• 탈출 속도 (v<sub>e</sub>):</span>
+                        <span class="font-bold bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">v<sub>e</sub> = √(2GM / R)</span>
+                    </div>
+                    <div class="text-amber-300 flex justify-between items-center">
+                        <span>• 분자 평균 속도 (v<sub>rms</sub>):</span>
+                        <span class="font-bold bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">v<sub>rms</sub> = √(3RT / M<sub>m</sub>)</span>
+                    </div>
+                </div>
+
+                <div class="space-y-1 text-slate-300">
+                    <p class="leading-relaxed">
+                        • <strong class="text-slate-100">탈출 속도(v<sub>e</sub>)</strong>: 행성의 질량(M)이 크고 반지름(R)이 작을수록 증가합니다.
+                    </p>
+                    <p class="leading-relaxed">
+                        • <strong class="text-slate-100">분자 평균 속도(v<sub>rms</sub>)</strong>: 절대온도(T)가 높을수록, 분자량(M<sub>m</sub>)이 가벼울수록 빠릅니다.
+                    </p>
+                    <p class="leading-relaxed text-slate-400 pt-1 border-t border-slate-800">
+                        * 대기를 장기간 포획하려면 <span class="text-emerald-400 font-semibold">v<sub>e</sub> &ge; 6 × v<sub>rms</sub></span> 조건을 만족해야 합니다.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- RIGHT PANEL: Canvas Particle Simulation & Gas Status Grid (8 cols) -->
+        <section class="lg:col-span-8 flex flex-col gap-6">
+            <!-- Canvas Particle Simulator Card -->
+            <div class="glass-panel rounded-2xl p-4 shadow-xl flex flex-col h-[340px] relative overflow-hidden">
+                <div class="flex items-center justify-between mb-2 z-10">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="play-circle" class="w-4 h-4 text-blue-400"></i>
+                        <span class="text-xs font-semibold text-slate-200">2D 대기 분자 열운동 & 포획 시뮬레이션</span>
+                    </div>
+                    
+                    <label class="flex items-center cursor-pointer text-xs text-slate-400 hover:text-slate-200 transition">
+                        <input type="checkbox" id="toggle-vectors" class="sr-only peer">
+                        <div class="w-7 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600 relative"></div>
+                        <span class="ml-2 font-mono text-[11px]">속도 벡터 표시</span>
+                    </label>
+                </div>
+
+                <!-- Simulation Canvas Wrapper -->
+                <div class="relative w-full h-full rounded-xl overflow-hidden bg-slate-950/80 border border-slate-800 flex items-center justify-center">
+                    <canvas id="sim-canvas" class="w-full h-full block"></canvas>
+                </div>
+
+                <!-- Legend Bar -->
+                <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-400 mt-2 px-1">
+                    <div class="flex items-center space-x-3">
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-sky-400"></span> H₂</span>
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-300"></span> He</span>
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-indigo-400"></span> H₂O</span>
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-400"></span> N₂</span>
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-400"></span> O₂</span>
+                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-orange-400"></span> CO₂</span>
+                    </div>
+                    <span class="text-[10px] text-slate-500">* 입자 속도가 탈출 속도를 초과하면 u-space로 이탈</span>
+                </div>
+            </div>
+
+            <!-- Gas Retention Analysis Cards Grid -->
+            <div class="glass-panel rounded-2xl p-5 shadow-xl flex-1 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-3 border-b border-slate-700/60 pb-2">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
+                            <i data-lucide="gauge" class="w-4 h-4 text-cyan-400"></i>
+                            주요 대기 기체 포획 및 유실 판정
+                        </h3>
+                        <span class="text-[11px] text-slate-400">v_e vs v_rms 분석</span>
+                    </div>
+
+                    <!-- Gas Cards Container -->
+                    <div id="gas-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <!-- Gas Cards dynamically inserted via JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- BOTTOM PANEL: Student Inquiry Worksheet & Copy Button (12 cols) -->
+        <section class="lg:col-span-12">
+            <div class="glass-panel rounded-2xl p-6 border border-blue-500/20 shadow-2xl">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-slate-700/60 pb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i data-lucide="file-text" class="w-5 h-5 text-blue-400"></i>
+                            학생 물리 탐구 활동 보고서
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">시뮬레이터에서 탐구한 결과를 정리하고 복사하여 클래스룸/패드렛에 제출하세요.</p>
+                    </div>
+                    
+                    <button id="btn-copy-report" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm rounded-xl transition duration-200 flex items-center justify-center space-x-2 shadow-lg shadow-emerald-600/20 border border-emerald-400/30 active:scale-95">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                        <span>📄 제출 내용 전체 복사하기</span>
+                    </button>
+                </div>
+
+                <form id="inquiry-form" onsubmit="event.preventDefault();" class="grid grid-cols-1 md:grid-cols-12 gap-5">
+                    <!-- Student Info -->
+                    <div class="md:col-span-4 space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1.5">[입력 1] 학번 / 이름 / 조</label>
+                            <input type="text" id="student-info" placeholder="예: 20101 홍길동 (3조)" class="w-full px-3.5 py-2.5 bg-slate-900/90 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                        </div>
+                        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-400 space-y-1">
+                            <div class="text-slate-300 font-medium">💡 작성 가이드</div>
+                            <p>• 생성된 행성의 중력과 기온이 대기 성분에 미친 영향을 정량적 수치를 참고하여 서술해보세요.</p>
+                        </div>
+                    </div>
+
+                    <!-- Observation Summary -->
+                    <div class="md:col-span-4 space-y-1.5">
+                        <label class="block text-xs font-semibold text-slate-300">[입력 2] 행성의 대기 구성 특징 요약</label>
+                        <textarea id="report-atmosphere" rows="5" placeholder="어떤 기체가 포획되었고 어떤 기체가 완전 탈출하였나요? 그 이유는 탈출 속도와 분자 속도 관점에서 무엇인가요?" class="w-full px-3.5 py-2.5 bg-slate-900/90 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"></textarea>
+                    </div>
+
+                    <!-- Environment Analysis & Life Suitability -->
+                    <div class="md:col-span-4 space-y-1.5">
+                        <label class="block text-xs font-semibold text-slate-300">[입력 3] 물리적 환경 역추적 및 탐사 계획</label>
+                        <textarea id="report-environment" rows="5" placeholder="이 행성에 생명체가 거주할 수 있을까요? 인간이 이 행성을 방문한다면 어떤 방호복, 장비, 생명유지장치가 필수적일지 서술하세요." class="w-full px-3.5 py-2.5 bg-slate-900/90 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"></textarea>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-7xl mx-auto w-full px-4 md:px-8 mt-10 text-center text-xs text-slate-500">
+        <p>© 고등학교 물리학 I 교육용 시뮬레이터 | 물리적 수식 자동 계산 및 분자운동론 시각화 도구</p>
+    </footer>
+
+    <!-- Teacher Menu Modal -->
+    <div id="teacher-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
+        <div class="glass-panel w-full max-w-2xl rounded-2xl p-6 shadow-2xl border border-purple-500/30 flex flex-col space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                <div class="flex items-center space-x-2">
+                    <div class="p-2 bg-purple-600/20 text-purple-400 rounded-lg border border-purple-500/30">
+                        <i data-lucide="graduation-cap" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg text-white">교사용 학생 제출 데이터 로드 & 검토</h3>
+                        <p class="text-xs text-slate-400">학생이 클립보드로 복사/제출한 보고서 텍스트를 붙여넣으세요.</p>
+                    </div>
+                </div>
+                <button id="btn-close-teacher-modal" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="space-y-2">
+                <label class="block text-xs font-semibold text-purple-300">📋 학생 제출 보고서 텍스트 붙여넣기</label>
+                <textarea id="teacher-paste-input" rows="8" placeholder="학생이 '제출 내용 전체 복사하기' 버튼으로 복사한 전체 내용을 이곳에 붙여넣으세요 (Ctrl+V)&#10;&#10;[예시]&#10;[행성 대기 포획 탐구 활동 보고서]&#10;■ 학번/이름/조: 20101 홍길동 (3조)&#10;■ 탐구 행성: Kepler-84b (암석형 행성)&#10;[1. 행성 물리 스펙]&#10;- 질량: 2.50 M⊕&#10;- 반지름: 1.40 R⊕&#10;- 표면 기온: 30 °C..." class="w-full px-3.5 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-xs font-mono text-slate-200 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 resize-none"></textarea>
+            </div>
+
+            <div id="teacher-parse-status" class="hidden p-3 rounded-xl text-xs font-medium border flex items-center gap-2"></div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
+                <button id="btn-clear-teacher-input" class="w-full sm:w-auto px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-xl transition">
+                    내용 비우기
+                </button>
+                <button id="btn-apply-teacher-data" class="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-xs md:text-sm rounded-xl shadow-lg shadow-purple-500/20 transition flex items-center justify-center space-x-2 border border-purple-400/30 active:scale-95">
+                    <i data-lucide="file-input" class="w-4 h-4"></i>
+                    <span>📥 물리량 시뮬레이터에 적용 및 보고서 로드</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 px-4 py-3 bg-emerald-600 text-white font-medium text-sm rounded-xl shadow-2xl opacity-0 pointer-events-none transition-all duration-300 flex items-center space-x-2 z-50">
+        <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+        <span id="toast-msg">복사되었습니다!</span>
+    </div>
+
+    <script>
+        /* ==========================================================================
+           PHYSICS ENGINE & DATA STRUCTURES
+           ========================================================================== */
+
+        // Physical Constants
+        const G_CONST = 6.67430e-11;
+        const R_GAS = 8.314; // J/(mol·K)
+        const M_EARTH = 5.972e24; // kg
+        const R_EARTH = 6.371e6; // m
+        const V_ESCAPE_EARTH = 11.186; // km/s
+
+        // Gas Molecules Dataset
+        const GASES = [
+            { id: 'H2',  name: '수소 (H₂)', molarMass: 0.002, color: '#38BDF8', radius: 3 },
+            { id: 'He',  name: '헬륨 (He)', molarMass: 0.004, color: '#A7F3D0', radius: 3.5 },
+            { id: 'H2O', name: '수증기 (H₂O)', molarMass: 0.018, color: '#818CF8', radius: 4.5 },
+            { id: 'N2',  name: '질소 (N₂)', molarMass: 0.028, color: '#60A5FA', radius: 5 },
+            { id: 'O2',  name: '산소 (O₂)', molarMass: 0.032, color: '#F87171', radius: 5 },
+            { id: 'CO2', name: '이산화탄소 (CO₂)', molarMass: 0.044, color: '#FB923C', radius: 6 }
+        ];
+
+        // Solar System Presets
+        const PRESETS = {
+            earth:   { name: '지구 (Earth)', massRel: 1.0, radiusRel: 1.0, tempC: 15, type: '암석형 행성' },
+            moon:    { name: '달 (Moon)', massRel: 0.012, radiusRel: 0.27, tempC: -20, type: '암석형 행성' },
+            mars:    { name: '화성 (Mars)', massRel: 0.11, radiusRel: 0.53, tempC: -60, type: '암석형 행성' },
+            mercury: { name: '수성 (Mercury)', massRel: 0.055, radiusRel: 0.38, tempC: 167, type: '암석형 행성' },
+            jupiter: { name: '목성 (Jupiter)', massRel: 317.8, radiusRel: 11.2, tempC: -110, type: '가스형 행성' },
+            saturn:  { name: '토성 (Saturn)', massRel: 95.2, radiusRel: 9.45, tempC: -140, type: '가스형 행성' }
+        };
+
+        // Random Planet Name Generator Parts
+        const PLANET_PREFIXES = ['Kepler', 'Gliese', 'HD', 'TRAPPIST', 'K2', 'WASP', 'Xenon', 'Aether', 'Kronos', 'Valkyrie'];
+        const PLANET_SUFFIXES = ['b', 'c', 'd', 'e', 'f', 'Prime', 'Major', 'Proxima'];
+
+        // State variables
+        let planetState = {
+            name: 'Kepler-84b',
+            massRel: 1.0,     // M / M_earth
+            radiusRel: 1.0,   // R / R_earth
+            tempC: 15,        // Celsius
+            type: '암석형 행성',
+            vEscape: 11.2,    // km/s
+            gravity: 9.80,    // m/s2
+            gravityRel: 1.0,
+            gasAnalysis: []   // Calculated gas state
+        };
+
+        // Determine Planet Type based on density and radius relative to Earth
+        function determinePlanetType(mRel, rRel) {
+            const densityRatio = mRel / Math.pow(rRel, 3);
+            if (rRel >= 3.0 || (densityRatio < 0.25 && rRel > 1.5)) {
+                return '가스형 행성';
+            } else {
+                return '암석형 행성';
+            }
+        }
+
+        // Calculate Escape Velocity (km/s)
+        function calcEscapeVelocity(mRel, rRel) {
+            return V_ESCAPE_EARTH * Math.sqrt(mRel / rRel);
+        }
+
+        // Calculate Surface Gravity (m/s2)
+        function calcSurfaceGravity(mRel, rRel) {
+            const gEarth = 9.80665;
+            return gEarth * (mRel / (rRel * rRel));
+        }
+
+        // Calculate Root-Mean-Square Molecular Speed v_rms (km/s)
+        function calcGasVrms(molarMass, tempC) {
+            const tempK = tempC + 273.15;
+            if (tempK <= 0) return 0;
+            const vRmsMS = Math.sqrt((3 * R_GAS * tempK) / molarMass);
+            return vRmsMS / 1000; // convert to km/s
+        }
+
+        // Determine Gas Capture Status
+        function evaluateGasStatus(vEscape, vRms) {
+            const ratio = vEscape / vRms;
+            if (ratio >= 6.0) {
+                return {
+                    code: 'CAPTURED',
+                    label: '안정적 포획 🟢',
+                    bgColor: 'bg-emerald-950/40',
+                    borderColor: 'border-emerald-500/30',
+                    textColor: 'text-emerald-400',
+                    badgeBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+                    description: '기체 속도가 탈출 속도에 비해 훨씬 느려 안정적으로 대기를 형성함.'
+                };
+            } else if (ratio >= 4.0) {
+                return {
+                    code: 'PARTIAL',
+                    label: '부분 유실 🟡',
+                    bgColor: 'bg-amber-950/40',
+                    borderColor: 'border-amber-500/30',
+                    textColor: 'text-amber-400',
+                    badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+                    description: '상층 대기의 빠른 분자들이 시간에 따라 천천히 우주로 유실됨.'
+                };
+            } else {
+                return {
+                    code: 'ESCAPED',
+                    label: '완전 탈출 🔴',
+                    bgColor: 'bg-rose-950/40',
+                    borderColor: 'border-rose-500/30',
+                    textColor: 'text-rose-400',
+                    badgeBg: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+                    description: '대다수 분자 속도가 탈출 속도에 도달하여 대기층을 형성하지 못하고 날아감.'
+                };
+            }
+        }
+
+        // Generate Random Planet Specs
+        function generateRandomPlanet() {
+            const prefix = PLANET_PREFIXES[Math.floor(Math.random() * PLANET_PREFIXES.length)];
+            const num = Math.floor(Math.random() * 900) + 100;
+            const suffix = PLANET_SUFFIXES[Math.floor(Math.random() * PLANET_SUFFIXES.length)];
+            
+            const name = `${prefix}-${num}${suffix}`;
+            
+            const isGasType = Math.random() < 0.4;
+            let massRel, radiusRel;
+
+            if (isGasType) {
+                massRel = parseFloat((Math.random() * 250 + 15.0).toFixed(1));
+                radiusRel = parseFloat((Math.random() * 8.0 + 3.0).toFixed(1));
+            } else {
+                massRel = parseFloat((Math.random() * 9.9 + 0.1).toFixed(2));
+                radiusRel = parseFloat((Math.random() * 2.5 + 0.4).toFixed(2));
+            }
+            
+            const tempC = Math.floor(Math.random() * 551) - 150;
+            const type = isGasType ? '가스형 행성' : '암석형 행성';
+
+            return { name, massRel, radiusRel, tempC, type };
+        }
+
+        // DOM Elements
+        const elMassInput = document.getElementById('input-mass');
+        const elRadiusInput = document.getElementById('input-radius');
+        const elTempInput = document.getElementById('input-temp');
+
+        const elMassVal = document.getElementById('val-mass');
+        const elRadiusVal = document.getElementById('val-radius');
+        const elTempVal = document.getElementById('val-temp');
+
+        const elPlanetName = document.getElementById('planet-name');
+        const elPlanetType = document.getElementById('planet-type');
+        const elCalcGravity = document.getElementById('calc-gravity');
+        const elCalcGravityRel = document.getElementById('calc-gravity-rel');
+        const elCalcVEscape = document.getElementById('calc-v-escape');
+        const elGasContainer = document.getElementById('gas-container');
+        const elBtnRandom = document.getElementById('btn-random-planet');
+        const elBtnCopy = document.getElementById('btn-copy-report');
+        const elPlanetBadge = document.getElementById('planet-icon-badge');
+
+        // Teacher Modal Elements
+        const elBtnTeacherMenu = document.getElementById('btn-teacher-menu');
+        const elTeacherModal = document.getElementById('teacher-modal');
+        const elBtnCloseTeacherModal = document.getElementById('btn-close-teacher-modal');
+        const elTeacherPasteInput = document.getElementById('teacher-paste-input');
+        const elBtnApplyTeacherData = document.getElementById('btn-apply-teacher-data');
+        const elBtnClearTeacherInput = document.getElementById('btn-clear-teacher-input');
+        const elTeacherParseStatus = document.getElementById('teacher-parse-status');
+
+        // Update Physics State & UI
+        function updatePhysics() {
+            planetState.massRel = parseFloat(elMassInput.value);
+            planetState.radiusRel = parseFloat(elRadiusInput.value);
+            planetState.tempC = parseInt(elTempInput.value);
+
+            planetState.type = determinePlanetType(planetState.massRel, planetState.radiusRel);
+
+            planetState.vEscape = calcEscapeVelocity(planetState.massRel, planetState.radiusRel);
+            planetState.gravity = calcSurfaceGravity(planetState.massRel, planetState.radiusRel);
+            planetState.gravityRel = planetState.gravity / 9.80665;
+
+            // Render Planet Spec Card
+            elMassVal.textContent = `${planetState.massRel.toFixed(2)} M⊕`;
+            elRadiusVal.textContent = `${planetState.radiusRel.toFixed(2)} R⊕`;
+            elTempVal.textContent = `${planetState.tempC} °C`;
+            elPlanetType.textContent = planetState.type;
+
+            elCalcGravity.textContent = `${planetState.gravity.toFixed(2)} m/s²`;
+            elCalcGravityRel.textContent = `(지구의 ${planetState.gravityRel.toFixed(2)}배)`;
+            elCalcVEscape.textContent = `${planetState.vEscape.toFixed(2)} km/s`;
+
+            // Calculate Gas Analysis
+            planetState.gasAnalysis = GASES.map(gas => {
+                const vRms = calcGasVrms(gas.molarMass, planetState.tempC);
+                const status = evaluateGasStatus(planetState.vEscape, vRms);
+                return {
+                    ...gas,
+                    vRms,
+                    status
+                };
+            });
+
+            // Render Gas Cards
+            renderGasCards();
+
+            // Reset Canvas Particles according to new planet parameters
+            initParticles();
+        }
+
+        // Apply Preset Planet
+        function applyPreset(presetKey) {
+            const preset = PRESETS[presetKey];
+            if (!preset) return;
+
+            planetState.name = preset.name;
+            planetState.type = preset.type;
+            elPlanetName.textContent = preset.name;
+
+            elMassInput.value = preset.massRel;
+            elRadiusInput.value = preset.radiusRel;
+            elTempInput.value = preset.tempC;
+
+            updatePhysics();
+            showToast(`🪐 [${preset.name}] 스펙이 적용되었습니다!`);
+        }
+
+        // Attach event listeners to preset buttons
+        document.querySelectorAll('.btn-preset').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const presetKey = e.currentTarget.getAttribute('data-preset');
+                applyPreset(presetKey);
+            });
+        });
+
+        // Render Gas UI Cards
+        function renderGasCards() {
+            if (!elGasContainer) return;
+            elGasContainer.innerHTML = '';
+
+            planetState.gasAnalysis.forEach(gas => {
+                const ratio = planetState.vEscape / gas.vRms;
+                const progressPct = Math.min(100, Math.max(5, (ratio / 8.0) * 100));
+
+                const cardHtml = `
+                    <div class="glass-card p-3.5 rounded-xl border ${gas.status.borderColor} ${gas.status.bgColor} transition-all duration-300">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3 h-3 rounded-full" style="background-color: ${gas.color}"></span>
+                                <span class="font-bold text-sm text-slate-100">${gas.name}</span>
+                            </div>
+                            <span class="text-xs px-2 py-0.5 rounded-md font-medium border ${gas.status.badgeBg}">
+                                ${gas.status.label}
+                            </span>
+                        </div>
+
+                        <div class="flex items-center justify-between text-xs text-slate-300 mb-1.5 font-mono">
+                            <span>분자 속도(v_rms): <strong class="text-white">${gas.vRms.toFixed(2)} km/s</strong></span>
+                            <span class="text-[11px] text-slate-400">포획비율: ${(ratio).toFixed(1)}x</span>
+                        </div>
+
+                        <!-- Progress visual comparing v_rms vs v_escape -->
+                        <div class="w-full h-2 bg-slate-900/80 rounded-full overflow-hidden border border-slate-700/50">
+                            <div class="h-full rounded-full transition-all duration-500 ${
+                                gas.status.code === 'CAPTURED' ? 'bg-emerald-500' :
+                                gas.status.code === 'PARTIAL' ? 'bg-amber-400' : 'bg-rose-500'
+                            }" style="width: ${progressPct}%"></div>
+                        </div>
+
+                        <p class="text-[11px] text-slate-400 mt-2 leading-tight">
+                            ${gas.status.description}
+                        </p>
+                    </div>
+                `;
+                elGasContainer.insertAdjacentHTML('beforeend', cardHtml);
+            });
+        }
+
+        // Canvas Setup & Particle Loop
+        const canvas = document.getElementById('sim-canvas');
+        const ctx = canvas ? canvas.getContext('2d') : null;
+        const toggleVectors = document.getElementById('toggle-vectors');
+
+        let particles = [];
+        const PARTICLE_COUNT = 70;
+
+        function resizeCanvas() {
+            if (!canvas || !canvas.parentElement) return;
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        class Particle {
+            constructor() {
+                this.reset(true);
+            }
+
+            reset(initial = false) {
+                if (!canvas) return;
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const planetPixelRadius = Math.max(35, Math.min(80, planetState.radiusRel * 30));
+
+                this.gasInfo = GASES[Math.floor(Math.random() * GASES.length)];
+                
+                const angle = Math.random() * Math.PI * 2;
+                const dist = planetPixelRadius + (initial ? Math.random() * 40 : Math.random() * 10);
+
+                this.x = centerX + Math.cos(angle) * dist;
+                this.y = centerY + Math.sin(angle) * dist;
+
+                const vRms = calcGasVrms(this.gasInfo.molarMass, planetState.tempC);
+                const speedScale = 0.8;
+                const speed = vRms * speedScale;
+
+                const dirAngle = angle + (Math.random() - 0.5) * 1.2;
+                this.vx = Math.cos(dirAngle) * speed;
+                this.vy = Math.sin(dirAngle) * speed;
+
+                this.escaped = false;
+                this.life = 0;
+            }
+
+            update() {
+                if (!canvas) return;
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const planetPixelRadius = Math.max(35, Math.min(80, planetState.radiusRel * 30));
+
+                const dx = centerX - this.x;
+                const dy = centerY - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                const gravityStrength = (planetState.massRel * 80) / Math.max(dist, 10);
+                
+                if (dist > planetPixelRadius) {
+                    this.vx += (dx / dist) * (gravityStrength * 0.02);
+                    this.vy += (dy / dist) * (gravityStrength * 0.02);
+                } else {
+                    const nx = dx / dist;
+                    const ny = dy / dist;
+                    this.x = centerX - nx * (planetPixelRadius + 2);
+                    this.y = centerY - ny * (planetPixelRadius + 2);
+                    this.vx = -this.vx * 0.6;
+                    this.vy = -this.vy * 0.6;
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life++;
+
+                const maxDist = Math.max(canvas.width, canvas.height) / 1.5;
+                if (dist > maxDist || this.life > 400) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                if (!ctx) return;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.gasInfo.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.gasInfo.color;
+                ctx.fill();
+
+                if (toggleVectors && toggleVectors.checked) {
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y);
+                    ctx.lineTo(this.x + this.vx * 6, this.y + this.vy * 6);
+                    ctx.strokeStyle = this.gasInfo.color + 'aa';
+                    ctx.lineWidth = 1.2;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function renderCanvas() {
+            if (!ctx || !canvas) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const planetPixelRadius = Math.max(35, Math.min(80, planetState.radiusRel * 30));
+
+            // Draw Planet Atmosphere Glow
+            const glowGradient = ctx.createRadialGradient(
+                centerX, centerY, planetPixelRadius * 0.8,
+                centerX, centerY, planetPixelRadius * 1.8
+            );
+            glowGradient.addColorStop(0, 'rgba(59, 130, 246, 0.35)');
+            glowGradient.addColorStop(0.5, 'rgba(14, 165, 233, 0.15)');
+            glowGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+            ctx.fillStyle = glowGradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, planetPixelRadius * 1.8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw Planet Body
+            const planetGradient = ctx.createRadialGradient(
+                centerX - planetPixelRadius * 0.3, centerY - planetPixelRadius * 0.3, planetPixelRadius * 0.1,
+                centerX, centerY, planetPixelRadius
+            );
+
+            if (planetState.tempC < 0) {
+                planetGradient.addColorStop(0, '#93C5FD');
+                planetGradient.addColorStop(1, '#1E3A8A');
+            } else if (planetState.tempC < 100) {
+                planetGradient.addColorStop(0, '#3B82F6');
+                planetGradient.addColorStop(1, '#0F172A');
+            } else {
+                planetGradient.addColorStop(0, '#F97316');
+                planetGradient.addColorStop(1, '#7C2D12');
+            }
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, planetPixelRadius, 0, Math.PI * 2);
+            ctx.fillStyle = planetGradient;
+            ctx.shadowColor = 'rgba(0,0,0,0.8)';
+            ctx.shadowBlur = 15;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Draw Planet Specs Text on Canvas
+            ctx.fillStyle = '#94A3B8';
+            ctx.font = '11px Pretendard, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(planetState.name, centerX, centerY + 4);
+
+            // Update and Draw Particles
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            requestAnimationFrame(renderCanvas);
+        }
+
+        // Event Listeners for Sliders
+        elMassInput.addEventListener('input', updatePhysics);
+        elRadiusInput.addEventListener('input', updatePhysics);
+        elTempInput.addEventListener('input', updatePhysics);
+
+        // Random Planet Generator Event
+        elBtnRandom.addEventListener('click', () => {
+            const randomSpec = generateRandomPlanet();
+            
+            planetState.name = randomSpec.name;
+            planetState.type = randomSpec.type;
+            elPlanetName.textContent = randomSpec.name;
+
+            elMassInput.value = randomSpec.massRel;
+            elRadiusInput.value = randomSpec.radiusRel;
+            elTempInput.value = randomSpec.tempC;
+
+            // Flash badge animation
+            elPlanetBadge.classList.remove('animate-pulse');
+            void elPlanetBadge.offsetWidth; // trigger reflow
+            elPlanetBadge.classList.add('animate-pulse');
+
+            updatePhysics();
+            showToast(`🚀 [${randomSpec.name}] (${randomSpec.type}) 행성이 생성되었습니다!`);
+        });
+
+        // ==========================================
+        // TEACHER MENU & STUDENT DATA PARSER LOGIC
+        // ==========================================
+        if (elBtnTeacherMenu) {
+            elBtnTeacherMenu.addEventListener('click', () => {
+                elTeacherModal.classList.remove('opacity-0', 'pointer-events-none');
+                elTeacherModal.classList.add('opacity-100');
+            });
+        }
+
+        if (elBtnCloseTeacherModal) {
+            elBtnCloseTeacherModal.addEventListener('click', closeTeacherModal);
+        }
+
+        function closeTeacherModal() {
+            elTeacherModal.classList.remove('opacity-100');
+            elTeacherModal.classList.add('opacity-0', 'pointer-events-none');
+            if (elTeacherParseStatus) elTeacherParseStatus.classList.add('hidden');
+        }
+
+        if (elBtnClearTeacherInput) {
+            elBtnClearTeacherInput.addEventListener('click', () => {
+                elTeacherPasteInput.value = '';
+                if (elTeacherParseStatus) elTeacherParseStatus.classList.add('hidden');
+            });
+        }
+
+        if (elBtnApplyTeacherData) {
+            elBtnApplyTeacherData.addEventListener('click', () => {
+                const text = elTeacherPasteInput.value;
+                if (!text || !text.trim()) {
+                    showTeacherStatus('텍스트를 입력해주세요.', false);
+                    return;
+                }
+
+                const parsed = parseStudentReportText(text);
+
+                if (!parsed.massVal && !parsed.radiusVal && !parsed.tempVal) {
+                    showTeacherStatus('행성 물리량 데이터(질량, 반지름, 온도)를 찾지 못했습니다. 학생 제출 형식을 확인하세요.', false);
+                    return;
+                }
+
+                // Apply parsed values
+                if (parsed.planetName) {
+                    planetState.name = parsed.planetName;
+                    elPlanetName.textContent = parsed.planetName;
+                }
+
+                if (parsed.massVal !== null) elMassInput.value = parsed.massVal;
+                if (parsed.radiusVal !== null) elRadiusInput.value = parsed.radiusVal;
+                if (parsed.tempVal !== null) elTempInput.value = parsed.tempVal;
+
+                // Fill student inquiry form fields for teacher review
+                if (parsed.studentInfo) document.getElementById('student-info').value = parsed.studentInfo;
+                if (parsed.atmosphereSummary) document.getElementById('report-atmosphere').value = parsed.atmosphereSummary;
+                if (parsed.environmentSummary) document.getElementById('report-environment').value = parsed.environmentSummary;
+
+                updatePhysics();
+                closeTeacherModal();
+                showToast(`🎓 [${planetState.name}] 학생 데이터 및 시뮬레이터 물리량이 적용되었습니다!`);
+            });
+        }
+
+        function showTeacherStatus(msg, isSuccess) {
+            if (!elTeacherParseStatus) return;
+            elTeacherParseStatus.classList.remove('hidden', 'bg-emerald-950/50', 'border-emerald-500/40', 'text-emerald-300', 'bg-rose-950/50', 'border-rose-500/40', 'text-rose-300');
+            if (isSuccess) {
+                elTeacherParseStatus.classList.add('bg-emerald-950/50', 'border-emerald-500/40', 'text-emerald-300');
+            } else {
+                elTeacherParseStatus.classList.add('bg-rose-950/50', 'border-rose-500/40', 'text-rose-300');
+            }
+            elTeacherParseStatus.textContent = msg;
+        }
+
+        // Parse student report text format
+        function parseStudentReportText(text) {
+            let massVal = null;
+            let radiusVal = null;
+            let tempVal = null;
+            let planetName = null;
+            let studentInfo = null;
+            let atmosphereSummary = null;
+            let environmentSummary = null;
+
+            // Mass
+            const massMatch = text.match(/질량:\s*([\d.]+)\s*M⊕/i);
+            if (massMatch) massVal = parseFloat(massMatch[1]);
+
+            // Radius
+            const radiusMatch = text.match(/반지름:\s*([\d.]+)\s*R⊕/i);
+            if (radiusMatch) radiusVal = parseFloat(radiusMatch[1]);
+
+            // Temperature
+            const tempMatch = text.match(/표면 기온:\s*(-?\d+)\s*°C/i);
+            if (tempMatch) tempVal = parseInt(tempMatch[1]);
+
+            // Planet Name
+            const planetMatch = text.match(/탐구 행성:\s*([^\n(]+)/i);
+            if (planetMatch) planetName = planetMatch[1].trim();
+
+            // Student Info
+            const studentMatch = text.match(/학번\/이름\/조:\s*([^\n]+)/i);
+            if (studentMatch) studentInfo = studentMatch[1].trim();
+
+            // Atmosphere Summary
+            const atmoMatch = text.match(/\[3\.\s*대기 구성 특징 요약\]\s*\n([\s\S]*?)(?=\n\[4\.|\n-+|$)/i);
+            if (atmoMatch) atmosphereSummary = atmoMatch[1].trim();
+
+            // Environment Summary
+            const envMatch = text.match(/\[4\.\s*물리적 환경 역추적 및 탐사 계획\]\s*\n([\s\S]*?)(?=\n-+|$)/i);
+            if (envMatch) environmentSummary = envMatch[1].trim();
+
+            return { massVal, radiusVal, tempVal, planetName, studentInfo, atmosphereSummary, environmentSummary };
+        }
+
+        // Copy Inquiry Report
+        elBtnCopy.addEventListener('click', () => {
+            const studentInfo = document.getElementById('student-info').value || '미입력';
+            const atmosphereSummary = document.getElementById('report-atmosphere').value || '미입력';
+            const environmentSummary = document.getElementById('report-environment').value || '미입력';
+
+            const capturedGases = planetState.gasAnalysis
+                .filter(g => g.status.code === 'CAPTURED')
+                .map(g => g.name)
+                .join(', ') || '없음';
+
+            const partialGases = planetState.gasAnalysis
+                .filter(g => g.status.code === 'PARTIAL')
+                .map(g => g.name)
+                .join(', ') || '없음';
+
+            const escapedGases = planetState.gasAnalysis
+                .filter(g => g.status.code === 'ESCAPED')
+                .map(g => g.name)
+                .join(', ') || '없음';
+
+            const reportText = `
+[행성 대기 포획 탐구 활동 보고서]
+----------------------------------------
+■ 학번/이름/조: ${studentInfo}
+■ 탐구 행성: ${planetState.name} (${planetState.type})
+
+[1. 행성 물리 스펙]
+- 질량: ${planetState.massRel.toFixed(2)} M⊕ (지구 질량의 배수)
+- 반지름: ${planetState.radiusRel.toFixed(2)} R⊕ (지구 반지름의 배수)
+- 표면 기온: ${planetState.tempC} °C
+- 표면 중력: ${planetState.gravity.toFixed(2)} m/s² (지구의 ${planetState.gravityRel.toFixed(2)}배)
+- 중력 탈출 속도: ${planetState.vEscape.toFixed(2)} km/s
+
+[2. 대기 기체 포획 상태]
+- 안정적 포획 (🟢): ${capturedGases}
+- 부분 서서히 유실 (🟡): ${partialGases}
+- 완전 탈출 (🔴): ${escapedGases}
+
+[3. 대기 구성 특징 요약]
+${atmosphereSummary}
+
+[4. 물리적 환경 역추적 및 탐사 계획]
+${environmentSummary}
+----------------------------------------
+작성 일시: ${new Date().toLocaleString()}
+            `.trim();
+
+            copyToClipboard(reportText);
+        });
+
+        function copyToClipboard(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('📄 제출 보고서 내용이 클립보드에 복사되었습니다!');
+                }).catch(() => {
+                    legacyCopy(text);
+                });
+            } else {
+                legacyCopy(text);
+            }
+        }
+
+        function legacyCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast('📄 제출 보고서 내용이 클립보드에 복사되었습니다!');
+            } catch (err) {
+                showToast('복사에 실패했습니다. 수동으로 드래그하여 복사하세요.');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            if (!toast || !toastMsg) return;
+
+            toastMsg.textContent = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        window.onload = function() {
+            // Initialize Lucide Icons
+            if (window.lucide) lucide.createIcons();
+            
+            // Setup Canvas size
+            resizeCanvas();
+
+            // Initial Physics Calculation & Particles
+            updatePhysics();
+
+            // Start Canvas Animation Loop
+            renderCanvas();
+        };
+    </script>
+</body>
+</html>
